@@ -13,12 +13,13 @@ let dy = 0;
 let score = 0;
 let level = 1;
 let gameRunning = false;
-let gameSpeed = 150;
+let gameSpeed = 300;
+let nextDirection = null;
 
 const gameSpeedSettings = {
-    easy: 200,
-    medium: 150,
-    hard: 100
+    easy: 400,
+    medium: 300,
+    hard: 200
 };
 
 function generateFood() {
@@ -36,28 +37,26 @@ function generateFood() {
 }
 
 function drawGame() {
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#00ff41';
-    ctx.fillStyle = '#00ff41';
-
+    ctx.fillStyle = '#000';
     for (let segment of snake) {
-        ctx.fillRect(segment.x * gridSize + 2, segment.y * gridSize + 2, gridSize - 4, gridSize - 4);
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+        ctx.strokeStyle = '#333';
+        ctx.strokeRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
     }
 
-    ctx.shadowColor = '#ff6b6b';
-    ctx.fillStyle = '#ff6b6b';
-    ctx.fillRect(food.x * gridSize + 2, food.y * gridSize + 2, gridSize - 4, gridSize - 4);
-
-    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+    ctx.strokeStyle = '#333';
+    ctx.strokeRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
 
     drawGrid();
 }
 
 function drawGrid() {
-    ctx.strokeStyle = 'rgba(0, 255, 65, 0.1)';
+    ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
 
     for (let i = 0; i <= tileCount; i++) {
@@ -74,6 +73,38 @@ function drawGrid() {
 }
 
 function moveSnake() {
+    if (nextDirection !== null) {
+        const canTurn = true;
+        if (snake.length > 1) {
+            const neck = snake[1];
+            const newHead = {
+                x: snake[0].x + (nextDirection === 'left' ? -1 : nextDirection === 'right' ? 1 : 0),
+                y: snake[0].y + (nextDirection === 'up' ? -1 : nextDirection === 'down' ? 1 : 0)
+            };
+            if (newHead.x === neck.x && newHead.y === neck.y) {
+                nextDirection = null;
+            } else {
+                switch (nextDirection) {
+                    case 'up': dx = 0; dy = -1; break;
+                    case 'down': dx = 0; dy = 1; break;
+                    case 'left': dx = -1; dy = 0; break;
+                    case 'right': dx = 1; dy = 0; break;
+                }
+                nextDirection = null;
+            }
+        } else {
+            switch (nextDirection) {
+                case 'up': dx = 0; dy = -1; break;
+                case 'down': dx = 0; dy = 1; break;
+                case 'left': dx = -1; dy = 0; break;
+                case 'right': dx = 1; dy = 0; break;
+            }
+            nextDirection = null;
+        }
+    }
+
+    if (dx === 0 && dy === 0) return;
+
     const head = {x: snake[0].x + dx, y: snake[0].y + dy};
 
     if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
@@ -106,40 +137,14 @@ function moveSnake() {
 }
 
 function increaseSpeed() {
-    if (gameSpeed > 80) {
-        gameSpeed -= 10;
+    if (gameSpeed > 150) {
+        gameSpeed -= 20;
     }
 }
 
 function changeDirection(direction) {
     if (!gameRunning) return;
-
-    switch (direction) {
-        case 'up':
-            if (dy === 0) {
-                dx = 0;
-                dy = -1;
-            }
-            break;
-        case 'down':
-            if (dy === 0) {
-                dx = 0;
-                dy = 1;
-            }
-            break;
-        case 'left':
-            if (dx === 0) {
-                dx = -1;
-                dy = 0;
-            }
-            break;
-        case 'right':
-            if (dx === 0) {
-                dx = 1;
-                dy = 0;
-            }
-            break;
-    }
+    nextDirection = direction;
 }
 
 function gameOver() {
@@ -184,6 +189,7 @@ function startGame() {
     snake = [{x: 10, y: 10}];
     dx = 0;
     dy = 0;
+    nextDirection = null;
     score = 0;
     level = 1;
 
@@ -213,7 +219,17 @@ function gameLoop() {
 }
 
 document.addEventListener('keydown', function(e) {
-    if (!gameRunning) return;
+    if (!gameRunning) {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            if (!document.getElementById('startScreen').classList.contains('hidden')) {
+                startGame();
+            } else if (!document.getElementById('gameOver').classList.contains('hidden')) {
+                startGame();
+            }
+        }
+        return;
+    }
 
     switch(e.key) {
         case 'ArrowUp':
