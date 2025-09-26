@@ -705,20 +705,34 @@
         let pressedKey = null;
         let keyPressTime = 0;
 
-        document.addEventListener('keydown', function(e) {
+        // Make sure canvas can receive focus for keyboard events
+        canvas.setAttribute('tabindex', '0');
+        canvas.focus();
+
+        // Add keyboard event listeners to both document and canvas
+        function handleKeyDown(e) {
+            console.log('Key pressed:', e.key); // Debug log
+
+            // Allow starting game with any key when not running
             if (!gameRunning) {
-                if (e.key === ' ' || e.key === 'Enter') {
+                if (e.key === ' ' || e.key === 'Enter' ||
+                    e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+                    e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+                    e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'a' ||
+                    e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'd') {
                     e.preventDefault();
                     if (!document.getElementById('startScreen').classList.contains('hidden')) {
                         startGame();
+                        return;
                     } else if (!document.getElementById('gameOver').classList.contains('hidden')) {
                         startGame();
+                        return;
                     }
                 }
                 return;
             }
 
-            // Show key press feedback
+            // Game is running - handle movement
             let direction = null;
             switch(e.key) {
                 case 'ArrowUp':
@@ -758,7 +772,18 @@
             if (direction) {
                 pressedKey = direction;
                 keyPressTime = Date.now();
+                console.log('Direction changed to:', direction); // Debug log
             }
+        }
+
+        // Add event listeners to multiple elements to ensure keyboard capture
+        document.addEventListener('keydown', handleKeyDown);
+        canvas.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keydown', handleKeyDown);
+
+        // Focus canvas when clicked
+        canvas.addEventListener('click', function() {
+            canvas.focus();
         });
 
         // Visual feedback for button presses
