@@ -388,89 +388,64 @@ function gameLoop() {
     setTimeout(gameLoop, gameSpeed);
 }
 
-// Enhanced keyboard controls with visual feedback
-let pressedKey = null;
-let keyPressTime = 0;
+// FIXED: Simple and working keyboard controls
+document.addEventListener('keydown', function(e) {
+    console.log('🎮 Key pressed:', e.key, '| Game running:', gameRunning);
 
-// Make sure canvas can receive focus for keyboard events
-canvas.setAttribute('tabindex', '0');
-canvas.focus();
-
-// Add keyboard event listeners to both document and canvas
-function handleKeyDown(e) {
-    console.log('Key pressed:', e.key); // Debug log
-
-    // Allow starting game with any key when not running
+    // Start game with movement keys
     if (!gameRunning) {
-        if (e.key === ' ' || e.key === 'Enter' ||
-            e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
-            e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-            e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'a' ||
-            e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'd') {
+        const startKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D', ' ', 'Enter'];
+        if (startKeys.includes(e.key)) {
             e.preventDefault();
-            if (!document.getElementById('startScreen').classList.contains('hidden')) {
-                startGame();
-                return;
-            } else if (!document.getElementById('gameOver').classList.contains('hidden')) {
-                startGame();
-                return;
-            }
+            startGame();
+            // Don't return here - let it process the movement too
+        } else {
+            return;
         }
-        return;
     }
 
-    // Game is running - handle movement
-    let direction = null;
+    // Handle movement
+    e.preventDefault();
+    let moved = false;
+
     switch(e.key) {
         case 'ArrowUp':
         case 'w':
         case 'W':
-            e.preventDefault();
-            direction = 'up';
-            highlightButton('up');
             changeDirection('up');
+            highlightButton('up');
+            moved = true;
+            console.log('🐍 Moving UP');
             break;
         case 'ArrowDown':
         case 's':
         case 'S':
-            e.preventDefault();
-            direction = 'down';
-            highlightButton('down');
             changeDirection('down');
+            highlightButton('down');
+            moved = true;
+            console.log('🐍 Moving DOWN');
             break;
         case 'ArrowLeft':
         case 'a':
         case 'A':
-            e.preventDefault();
-            direction = 'left';
-            highlightButton('left');
             changeDirection('left');
+            highlightButton('left');
+            moved = true;
+            console.log('🐍 Moving LEFT');
             break;
         case 'ArrowRight':
         case 'd':
         case 'D':
-            e.preventDefault();
-            direction = 'right';
-            highlightButton('right');
             changeDirection('right');
+            highlightButton('right');
+            moved = true;
+            console.log('🐍 Moving RIGHT');
             break;
     }
 
-    if (direction) {
-        pressedKey = direction;
-        keyPressTime = Date.now();
-        console.log('Direction changed to:', direction); // Debug log
+    if (moved) {
+        console.log('✅ Direction command sent!');
     }
-}
-
-// Add event listeners to multiple elements to ensure keyboard capture
-document.addEventListener('keydown', handleKeyDown);
-canvas.addEventListener('keydown', handleKeyDown);
-window.addEventListener('keydown', handleKeyDown);
-
-// Focus canvas when clicked
-canvas.addEventListener('click', function() {
-    canvas.focus();
 });
 
 // Visual feedback for button presses
@@ -480,10 +455,10 @@ function highlightButton(direction) {
         const btnText = btn.textContent.trim();
         let btnDirection = '';
 
-        if (btnText === '↑') btnDirection = 'up';
-        else if (btnText === '↓') btnDirection = 'down';
-        else if (btnText === '←') btnDirection = 'left';
-        else if (btnText === '→') btnDirection = 'right';
+        if (btnText.includes('↑')) btnDirection = 'up';
+        else if (btnText.includes('↓')) btnDirection = 'down';
+        else if (btnText.includes('←')) btnDirection = 'left';
+        else if (btnText.includes('→')) btnDirection = 'right';
 
         if (btnDirection === direction) {
             btn.style.backgroundColor = '#4CAF50';
@@ -495,10 +470,6 @@ function highlightButton(direction) {
         }
     });
 }
-
-document.addEventListener('keyup', function(e) {
-    pressedKey = null;
-});
 
 let touchStartX = 0;
 let touchStartY = 0;
@@ -544,4 +515,5 @@ window.addEventListener('load', function() {
     initializeImages();
     updateHighScore();
     drawGame();
+    console.log('🎮 Game loaded! Press arrow keys or WASD to play!');
 });
