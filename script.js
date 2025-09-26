@@ -4,6 +4,155 @@ const ctx = canvas.getContext('2d');
 const gridSize = 20;
 const tileCount = canvas.width / gridSize;
 
+// Snake and food images
+let snakeHeadImg, snakeBodyImg, foodImg;
+
+// Create snake head image with curved edges
+function createSnakeHeadImage() {
+    const canvas = document.createElement('canvas');
+    canvas.width = gridSize;
+    canvas.height = gridSize;
+    const ctx = canvas.getContext('2d');
+
+    // Snake head - rounded rectangle with gradient
+    const radius = 8;
+    const centerX = gridSize / 2;
+    const centerY = gridSize / 2;
+
+    // Create gradient for depth
+    const gradient = ctx.createRadialGradient(centerX - 3, centerY - 3, 0, centerX, centerY, gridSize/2);
+    gradient.addColorStop(0, '#66BB6A');
+    gradient.addColorStop(1, '#2E7D32');
+
+    // Draw rounded head
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.roundRect(1, 1, gridSize - 2, gridSize - 2, radius);
+    ctx.fill();
+
+    // Add darker border
+    ctx.strokeStyle = '#1B5E20';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Eyes - larger and more realistic
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(centerX - 4, centerY - 2, 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX + 4, centerY - 2, 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Eye highlights
+    ctx.fillStyle = '#FFF';
+    ctx.beginPath();
+    ctx.arc(centerX - 3, centerY - 2.5, 1, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX + 5, centerY - 2.5, 1, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Nostrils
+    ctx.fillStyle = '#1B5E20';
+    ctx.beginPath();
+    ctx.arc(centerX - 2, centerY + 2, 0.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX + 2, centerY + 2, 0.5, 0, 2 * Math.PI);
+    ctx.fill();
+
+    return canvas;
+}
+
+// Create snake body image with curved edges
+function createSnakeBodyImage() {
+    const canvas = document.createElement('canvas');
+    canvas.width = gridSize;
+    canvas.height = gridSize;
+    const ctx = canvas.getContext('2d');
+
+    const radius = 6;
+    const centerX = gridSize / 2;
+    const centerY = gridSize / 2;
+
+    // Create gradient for body depth
+    const gradient = ctx.createRadialGradient(centerX - 2, centerY - 2, 0, centerX, centerY, gridSize/2);
+    gradient.addColorStop(0, '#4CAF50');
+    gradient.addColorStop(1, '#2E7D32');
+
+    // Draw rounded body segment
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.roundRect(2, 2, gridSize - 4, gridSize - 4, radius);
+    ctx.fill();
+
+    // Add subtle border
+    ctx.strokeStyle = '#388E3C';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Scale pattern with circles for more organic look
+    ctx.fillStyle = '#1B5E20';
+    ctx.globalAlpha = 0.3;
+
+    // Create scale pattern
+    ctx.beginPath();
+    ctx.arc(centerX - 3, centerY - 3, 1.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX + 3, centerY - 3, 1.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX - 3, centerY + 3, 1.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX + 3, centerY + 3, 1.5, 0, 2 * Math.PI);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    return canvas;
+}
+
+// Create food image (apple)
+function createFoodImage() {
+    const canvas = document.createElement('canvas');
+    canvas.width = gridSize;
+    canvas.height = gridSize;
+    const ctx = canvas.getContext('2d');
+
+    // Apple body - red
+    ctx.fillStyle = '#F44336';
+    ctx.beginPath();
+    ctx.arc(gridSize/2, gridSize/2 + 2, 7, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Apple highlight
+    ctx.fillStyle = '#FF8A80';
+    ctx.beginPath();
+    ctx.arc(gridSize/2 - 2, gridSize/2, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Apple stem
+    ctx.fillStyle = '#8BC34A';
+    ctx.fillRect(gridSize/2 - 1, 3, 2, 4);
+
+    // Apple leaf
+    ctx.fillStyle = '#4CAF50';
+    ctx.beginPath();
+    ctx.ellipse(gridSize/2 + 3, 5, 3, 2, Math.PI/4, 0, 2 * Math.PI);
+    ctx.fill();
+
+    return canvas;
+}
+
+// Initialize images
+function initializeImages() {
+    snakeHeadImg = createSnakeHeadImage();
+    snakeBodyImg = createSnakeBodyImage();
+    foodImg = createFoodImage();
+}
+
 let snake = [
     {x: 10, y: 10}
 ];
@@ -40,19 +189,40 @@ function drawGame() {
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#000';
-    for (let segment of snake) {
-        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
-        ctx.strokeStyle = '#333';
-        ctx.strokeRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+    // Draw snake with images
+    for (let i = 0; i < snake.length; i++) {
+        const segment = snake[i];
+        if (i === 0) {
+            // Draw head with direction-based rotation
+            drawSnakeHead(segment.x * gridSize, segment.y * gridSize);
+        } else {
+            // Draw body
+            ctx.drawImage(snakeBodyImg, segment.x * gridSize, segment.y * gridSize);
+        }
     }
 
-    ctx.fillStyle = '#000';
-    ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
-    ctx.strokeStyle = '#333';
-    ctx.strokeRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+    // Draw food with image
+    ctx.drawImage(foodImg, food.x * gridSize, food.y * gridSize);
 
     drawGrid();
+}
+
+function drawSnakeHead(x, y) {
+    ctx.save();
+
+    // Calculate rotation based on direction
+    let rotation = 0;
+    if (dx === 1) rotation = Math.PI / 2;      // Right
+    else if (dx === -1) rotation = -Math.PI / 2; // Left
+    else if (dy === 1) rotation = Math.PI;       // Down
+    else if (dy === -1) rotation = 0;            // Up
+
+    // Apply rotation
+    ctx.translate(x + gridSize/2, y + gridSize/2);
+    ctx.rotate(rotation);
+    ctx.drawImage(snakeHeadImg, -gridSize/2, -gridSize/2);
+
+    ctx.restore();
 }
 
 function drawGrid() {
@@ -218,6 +388,10 @@ function gameLoop() {
     setTimeout(gameLoop, gameSpeed);
 }
 
+// Enhanced keyboard controls with visual feedback
+let pressedKey = null;
+let keyPressTime = 0;
+
 document.addEventListener('keydown', function(e) {
     if (!gameRunning) {
         if (e.key === ' ' || e.key === 'Enter') {
@@ -231,32 +405,74 @@ document.addEventListener('keydown', function(e) {
         return;
     }
 
+    // Show key press feedback
+    let direction = null;
     switch(e.key) {
         case 'ArrowUp':
         case 'w':
         case 'W':
             e.preventDefault();
+            direction = 'up';
+            highlightButton('up');
             changeDirection('up');
             break;
         case 'ArrowDown':
         case 's':
         case 'S':
             e.preventDefault();
+            direction = 'down';
+            highlightButton('down');
             changeDirection('down');
             break;
         case 'ArrowLeft':
         case 'a':
         case 'A':
             e.preventDefault();
+            direction = 'left';
+            highlightButton('left');
             changeDirection('left');
             break;
         case 'ArrowRight':
         case 'd':
         case 'D':
             e.preventDefault();
+            direction = 'right';
+            highlightButton('right');
             changeDirection('right');
             break;
     }
+
+    if (direction) {
+        pressedKey = direction;
+        keyPressTime = Date.now();
+    }
+});
+
+// Visual feedback for button presses
+function highlightButton(direction) {
+    const buttons = document.querySelectorAll('.control-btn');
+    buttons.forEach(btn => {
+        const btnText = btn.textContent.trim();
+        let btnDirection = '';
+
+        if (btnText === '↑') btnDirection = 'up';
+        else if (btnText === '↓') btnDirection = 'down';
+        else if (btnText === '←') btnDirection = 'left';
+        else if (btnText === '→') btnDirection = 'right';
+
+        if (btnDirection === direction) {
+            btn.style.backgroundColor = '#4CAF50';
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btn.style.backgroundColor = '';
+                btn.style.transform = '';
+            }, 150);
+        }
+    });
+}
+
+document.addEventListener('keyup', function(e) {
+    pressedKey = null;
 });
 
 let touchStartX = 0;
@@ -300,6 +516,7 @@ canvas.addEventListener('touchend', function(e) {
 });
 
 window.addEventListener('load', function() {
+    initializeImages();
     updateHighScore();
     drawGame();
 });
